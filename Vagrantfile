@@ -14,5 +14,6 @@ Vagrant.configure(2) do |config|
   end
 
   # Provisioning
+  config.vm.provision "system", type: "shell", path: 'provision_system.sh'
   config.vm.provision "oracle", type: "shell", path: 'provision_oracle.sh'
 end
