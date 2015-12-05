@@ -1,0 +1,49 @@
+#!/bin/bash
+
+CONN="sys/vagrant@//localhost/cdb0 as sysdba"
+
+case "$1" in
+	ls)
+		sqlplus -s -L $CONN <<-EOF | grep -v '^$'
+			set term off linesize 200 heading off pagesize 0;
+			whenever sqlerror exit 2;
+			SELECT name, open_mode FROM v\$pdbs WHERE name != 'PDB\$SEED';
+		EOF
+		;;
+
+	create)
+		sqlplus -s -L $CONN <<-EOF | grep -v '^$'
+			set term off linesize 200 heading off pagesize 0;
+			whenever sqlerror exit 2;
+			CREATE PLUGGABLE DATABASE $2
+			  ADMIN USER ${3:-pdbsys} IDENTIFIED BY ${4:-vagrant} ROLES = (DBA)
+			  FILE_NAME_CONVERT = ('pdbseed', '$2');
+			ALTER PLUGGABLE DATABASE $2 OPEN;
+		EOF
+		;;
+	
+	drop)
+		sqlplus -s -L $CONN <<-EOF | grep -v '^$'
+			set term off linesize 200 heading off pagesize 0;
+			whenever sqlerror continue;
+			ALTER PLUGGABLE DATABASE $2 CLOSE IMMEDIATE;
+			whenever sqlerror exit 2;
+			DROP PLUGGABLE DATABASE $2 INCLUDING DATAFILES;
+		EOF
+		;;
+	
+	clone)
+		sqlplus -s -L $CONN <<-EOF | grep -v '^$'
+			set term off linesize 200 heading off pagesize 0;
+			whenever sqlerror exit 2;
+			CREATE PLUGGABLE DATABASE $3 FROM $2
+			  FILE_NAME_CONVERT = ('$2', '$3');
+			ALTER PLUGGABLE DATABASE $3 OPEN;
+		EOF
+		;;
+	
+	*)
+		echo "Usage: pdb ls | create PDB_NAME [ADMIN_USER=pdbsys [ADMIN_PASS=vagrant]] | drop PDB_NAME | clone SOURCE_PDB_NAME TARGET_PDB_NAME"
+		exit 1
+esac
+

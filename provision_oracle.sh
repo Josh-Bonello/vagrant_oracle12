@@ -2,6 +2,13 @@
 echo ">>>> Install Oracle preinstall package"
 yum install -y oracle-rdbms-server-12cR1-preinstall.x86_64
 
+echo ">>>> Setup Oracle user"
+echo oracle:vagrant | chpasswd
+
+echo ">>>> Oracle environment variables"
+cat /vagrant/bashrc >>/home/oracle/.bashrc
+cat /vagrant/bashrc >>/home/vagrant/.bashrc
+
 echo ">>>> Prepare for Oracle installation"
 mkdir -p /u01/app/oracle/distribs
 mkdir -p /u01/app/oraInventory
@@ -9,9 +16,6 @@ for i in /vagrant/orafiles/*.zip; do unzip $i -d /u01/app/oracle/distribs >/dev/
 chown -R oracle:dba /u01
 echo 'inventory_loc=/u01/app/oracle/oraInventory' > /etc/oraInst.loc
 echo 'inst_group=oinstall' >> /etc/oraInst.loc
-
-echo ">>>> Set Oracle environment variables in bashrc"
-cat /vagrant/bashrc >>/home/oracle/.bashrc
 
 echo ">>>> Install Oracle"
 echo ">>>> It's going to run in background, so we will peek at processed to see when it finishes"
@@ -39,4 +43,11 @@ chkconfig --add oracledb
 
 echo ">>>> Autostart PDBs"
 sudo -u oracle bash -c 'source /home/oracle/.bashrc; sqlplus -L -s sys/vagrant@cdb0 as sysdba @/vagrant/startup_all_pdbs.sql'
+
+echo ">>>> Deploy PDB management scripts"
+mkdir /home/oracle/bin
+\cp /vagrant/pdb /home/oracle/bin
+chown -R oracle:oinstall /home/oracle
+chmod a+rx /home/oracle
+chmod -R a+rx /home/oracle/bin
 
