@@ -51,3 +51,6 @@ chown -R oracle:oinstall /home/oracle
 chmod a+rx /home/oracle
 chmod -R a+rx /home/oracle/bin
 
+echo ">>>> Remove installation files"
+rm -rf /u01/app/oracle/distribs
+
